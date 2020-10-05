@@ -2,6 +2,8 @@ import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.swing.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +33,9 @@ public class Reinstate {
                     path = selectedFile.getAbsolutePath();
             }
         }
+        System.out.println(path);
         String newLocation = new File(path.replace(".gif", "")).getAbsolutePath();
-        reinstate(newLocation, 4);
+        reinstate(newLocation, 0);
     }
 
     private static void reinstate(String outPath, int startIdx) throws IOException {
@@ -88,12 +91,10 @@ public class Reinstate {
         }
     }
 
-    private void flip(BufferedImage image) {
-        for (int i = 0; i < image.getWidth(); i++)
-            for (int j = 0; j < image.getHeight() / 2; j++) {
-                int tmp = image.getRGB(i, j);
-                image.setRGB(i, j, image.getRGB(i, image.getHeight() - j - 1));
-                image.setRGB(i, image.getHeight() - j - 1, tmp);
-            }
+    private static BufferedImage flip(BufferedImage image) {
+        AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+        tx.translate(-image.getWidth(null), 0);
+        AffineTransformOp  op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+        return op.filter(image, null);
     }
 }
