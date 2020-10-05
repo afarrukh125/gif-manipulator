@@ -8,6 +8,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+/**
+ * Uses the Open-Imaging library by DhyanB: https://github.com/DhyanB/Open-Imaging
+ * Please obtain this library on your own and add it as a dependency to this project.
+ */
 public class Create {
 
     /**

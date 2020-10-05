@@ -1,20 +1,38 @@
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Reinstate {
 
     public static void main(String[] args) throws IOException {
-        String newLocation = new File(args[0]).getName().replace(".gif", "");
-        reinstate(newLocation, 49);
+        JOptionPane.showMessageDialog(null, "Before using this, please ensure you have a " +
+                "folder of .png files numbered in some ordering. If you don't please use the creator to generate " +
+                ".png files from a GIF.");
+
+        String path = "";
+
+        if (args.length == 0) {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int result = chooser.showOpenDialog(null);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = chooser.getSelectedFile();
+                if (!selectedFile.isDirectory()) {
+                    JOptionPane.showMessageDialog(null, "Please select a folder.");
+                    System.exit(0);
+                } else
+                    path = selectedFile.getAbsolutePath();
+            }
+        }
+        String newLocation = new File(path.replace(".gif", "")).getAbsolutePath();
+        reinstate(newLocation, 4);
     }
 
     private static void reinstate(String outPath, int startIdx) throws IOException {
@@ -24,14 +42,27 @@ public class Reinstate {
         if (directory.isDirectory()) {
             File[] fileArr = Objects.requireNonNull(directory.listFiles(), "Need a directory");
 
-            List<File> files = Arrays.stream(fileArr)
-                    .sorted(Comparator.comparingInt(o -> Integer.parseInt(o.getName().replace(".png", ""))))
-                    .collect(Collectors.toList());
+            List<File> files = Arrays.stream(fileArr).collect(Collectors.toList());
+
+            List<File> copyList = new ArrayList<>(files);
+            Utils.quickSort(copyList, Comparator.comparingInt(o -> Integer.parseInt(o.getName().replace(".png", ""))));
+
+            if (copyList.size() == 0) {
+                System.out.println("No numbered .png files found");
+                System.exit(0);
+            }
+
+            if (startIdx >= copyList.size()) {
+                System.out.println("Can't start looping at that index, it is higher than how many numbered files there are: " + copyList.size());
+                System.exit(0);
+            }
+
+            files = copyList;
 
             int numFiles = files.size();
 
             ImageOutputStream output =
-                    new FileImageOutputStream(new File(outPath + "/" + outPath + ".gif"));
+                    new FileImageOutputStream(new File(outPath + ".gif"));
 
             BufferedImage firstImage = ImageIO.read(files.get(startIdx));
 
@@ -55,5 +86,14 @@ public class Reinstate {
             writer.close();
             output.close();
         }
+    }
+
+    private void flip(BufferedImage image) {
+        for (int i = 0; i < image.getWidth(); i++)
+            for (int j = 0; j < image.getHeight() / 2; j++) {
+                int tmp = image.getRGB(i, j);
+                image.setRGB(i, j, image.getRGB(i, image.getHeight() - j - 1));
+                image.setRGB(i, image.getHeight() - j - 1, tmp);
+            }
     }
 }
