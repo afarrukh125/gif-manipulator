@@ -48,8 +48,8 @@ public class Create {
         writeImages(data, finalLocation);
 
         String outputAbsolutePath = new File(finalLocation).getAbsolutePath();
-//        JOptionPane.showMessageDialog(null, "Converted " + new File(path).getName() +
-//                                            " to images successfully! Check the files in directory " + outputAbsolutePath + ".");
+        JOptionPane.showMessageDialog(null, "Converted " + new File(path).getName() +
+                                            " to images successfully! Check the files in directory " + outputAbsolutePath + ".");
     }
 
     private static JFileChooser setupFileChooser() {
