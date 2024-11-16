@@ -1,29 +1,38 @@
 package com.afarrukh.giftools;
 
 import at.dhyan.open_imaging.GifSequenceWriter;
+import com.github.rvesse.airline.annotations.Command;
+import com.github.rvesse.airline.annotations.Option;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageOutputStream;
-import javax.swing.*;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
-public class Reinstate {
+@Command(name = "reinstate")
+public class ReinstateCommand implements Runnable {
 
-    public static void main(String[] args) throws IOException {
+    @Option(name = "--folder-path")
+    private String folderPath;
+
+    public void run() {
+        CreateCommand.setupUILookAndFeel();
         JOptionPane.showMessageDialog(
                 null,
                 "Before using this, please ensure you have a "
                         + "folder of .png files numbered in some ordering. If you don't please use the creator to generate "
                         + ".png files from a GIF.");
 
-        var path = "";
-
-        if (args.length == 0) {
+        if (folderPath == null) {
             var chooser = new JFileChooser();
             chooser.setCurrentDirectory(new File(System.getProperty("user.home")));
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -33,12 +42,16 @@ public class Reinstate {
                 if (!selectedFile.isDirectory()) {
                     JOptionPane.showMessageDialog(null, "Please select a folder.");
                     System.exit(0);
-                } else path = selectedFile.getAbsolutePath();
+                } else folderPath = selectedFile.getAbsolutePath();
             }
         }
-        System.out.println(path);
-        var newLocation = new File(path.replace(".gif", "")).getAbsolutePath();
-        reinstate(newLocation, 0);
+        System.out.println(folderPath);
+        var newLocation = new File(folderPath.replace(".gif", "")).getAbsolutePath();
+        try {
+            reinstate(newLocation, 0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void reinstate(String outPath, int startIdx) throws IOException {

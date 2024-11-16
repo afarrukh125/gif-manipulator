@@ -4,7 +4,9 @@ import static java.lang.Runtime.getRuntime;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
 import at.dhyan.open_imaging.GifDecoder;
-import java.awt.*;
+import com.github.rvesse.airline.annotations.Command;
+import com.github.rvesse.airline.annotations.Option;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,39 +16,39 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-public class Create {
+@Command(name = "create")
+public class CreateCommand implements Runnable {
 
-    /**
-     * Writes a folder of images to the directory this program was ran in, in a folder with the same name as the image
-     * @param args The path to the gif file that should be converted to images
-     * @throws IOException If file not found or similar
-     */
-    public static void main(String[] args) throws IOException {
-        String path = null;
-        if (args.length == 0) {
+    @Option(name = "--file-path")
+    private String filePath;
+
+    public void run() {
+        if (filePath == null) {
             setupUILookAndFeel();
             var chooser = setupFileChooser();
             int result = chooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
-                path = chooser.getSelectedFile().getAbsolutePath();
+                filePath = chooser.getSelectedFile().getAbsolutePath();
             }
-        } else {
-            path = args[0];
         }
 
-        System.out.println(path);
-        if (path == null) {
+        System.out.println(filePath);
+        if (filePath == null) {
             throw new IllegalArgumentException("No path provided, exiting...");
         }
-        final var data = new FileInputStream(path);
-        var finalLocation = "target/" + new File(path).getName().replace(".gif", "");
-        writeImages(data, finalLocation);
-
-        var outputAbsolutePath = new File(finalLocation).getAbsolutePath();
-        JOptionPane.showMessageDialog(
-                null,
-                "Converted " + new File(path).getName() + " to images successfully! Check the files in directory "
-                        + outputAbsolutePath + ".");
+        final FileInputStream data;
+        try {
+            data = new FileInputStream(filePath);
+            var finalLocation = "target/" + new File(filePath).getName().replace(".gif", "");
+            writeImages(data, finalLocation);
+            var outputAbsolutePath = new File(finalLocation).getAbsolutePath();
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Converted " + new File(filePath).getName()
+                            + " to images successfully! Check the files in directory " + outputAbsolutePath + ".");
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static JFileChooser setupFileChooser() {
@@ -59,7 +61,7 @@ public class Create {
         return chooser;
     }
 
-    private static void setupUILookAndFeel() {
+    static void setupUILookAndFeel() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException
@@ -76,11 +78,12 @@ public class Create {
      * @param outFileName The name of the folder, by default, the name of the file
      * @throws IOException If file not found or similar
      */
-    private static void writeImages(FileInputStream data, String outFileName) throws IOException {
+    private static void writeImages(FileInputStream data, String outFileName) throws IOException, InterruptedException {
         writeParallel(data, outFileName);
     }
 
-    private static void writeParallel(FileInputStream data, String outFileName) throws IOException {
+    private static void writeParallel(FileInputStream data, String outFileName)
+            throws IOException, InterruptedException {
         var gif = GifDecoder.read(data);
         int frameCount = gif.getFrameCount();
         try (var executorService = newFixedThreadPool(getRuntime().availableProcessors() * 2)) {
@@ -90,11 +93,7 @@ public class Create {
                 executorService.execute(() -> outputFrame(outFileName, finalI, img));
             }
             executorService.shutdown();
-            try {
-                executorService.awaitTermination(5, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            executorService.awaitTermination(5, TimeUnit.MINUTES);
         }
     }
 
