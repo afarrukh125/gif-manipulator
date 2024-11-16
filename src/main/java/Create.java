@@ -1,4 +1,3 @@
-import at.dhyan.open_imaging.GifDecoder;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
