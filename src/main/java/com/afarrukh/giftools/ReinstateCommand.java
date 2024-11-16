@@ -28,6 +28,9 @@ public class ReinstateCommand implements Runnable {
     @Option(name = "--folder-path")
     private String folderPath;
 
+    @Option(name = "--start-index")
+    private int startIndex = 0;
+
     public void run() {
         CreateCommand.setupUILookAndFeel();
 
@@ -38,7 +41,7 @@ public class ReinstateCommand implements Runnable {
                             + "folder of .png files numbered in some ordering. If you don't please use the creator to generate "
                             + ".png files from a GIF.");
             var chooser = new JFileChooser();
-            chooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+            chooser.setCurrentDirectory(new File("target/"));
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             int result = chooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
@@ -53,7 +56,7 @@ public class ReinstateCommand implements Runnable {
         System.out.println(folderPath);
         var newLocation = new File(folderPath.replace(".gif", "")).getAbsolutePath();
         try {
-            reinstate(newLocation, 0);
+            reinstate(newLocation, startIndex);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
