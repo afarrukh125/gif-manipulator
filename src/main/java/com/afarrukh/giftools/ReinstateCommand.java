@@ -30,13 +30,13 @@ public class ReinstateCommand implements Runnable {
 
     public void run() {
         CreateCommand.setupUILookAndFeel();
-        JOptionPane.showMessageDialog(
-                null,
-                "Before using this, please ensure you have a "
-                        + "folder of .png files numbered in some ordering. If you don't please use the creator to generate "
-                        + ".png files from a GIF.");
 
         if (folderPath == null) {
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Before using this, please ensure you have a "
+                            + "folder of .png files numbered in some ordering. If you don't please use the creator to generate "
+                            + ".png files from a GIF.");
             var chooser = new JFileChooser();
             chooser.setCurrentDirectory(new File(System.getProperty("user.home")));
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
