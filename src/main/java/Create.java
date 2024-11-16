@@ -13,10 +13,6 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.Runtime.getRuntime;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
-/**
- * Uses the Open-Imaging library by DhyanB: https://github.com/DhyanB/Open-Imaging
- * Please obtain this library on your own and add it as a dependency to this project.
- */
 public class Create {
 
     /**
