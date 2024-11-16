@@ -1,8 +1,8 @@
+package com.afarrukh.giftools;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -31,21 +31,18 @@ public class Utils {
     }
 
     public static <E> void quickSort(List<E> ls, Comparator<E> comp) {
-        if(ls.size() <= 1)
-            return;
+        if (ls.size() <= 1) return;
 
         E pivot = ls.get(0);
 
         List<E> smaller = new ArrayList<>();
         List<E> larger = new ArrayList<>();
 
-        for(int i = ls.size() - 1; i>0; i--) {
+        for (int i = ls.size() - 1; i > 0; i--) {
             E elem = ls.get(i);
             try {
-                if (comp.compare(elem, pivot) < 0)
-                    smaller.add(elem);
-                else
-                    larger.add(elem);
+                if (comp.compare(elem, pivot) < 0) smaller.add(elem);
+                else larger.add(elem);
             } catch (NumberFormatException ignored) {
                 ls.remove(i);
             }
@@ -61,7 +58,5 @@ public class Utils {
         ls.addAll(larger);
     }
 
-    public static void main(String[] args) {
-    }
-
+    public static void main(String[] args) {}
 }

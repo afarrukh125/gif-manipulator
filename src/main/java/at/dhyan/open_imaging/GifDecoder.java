@@ -1,3 +1,6 @@
+package at.dhyan.open_imaging;
+
+import static java.lang.System.arraycopy;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -6,8 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.lang.System.arraycopy;
 
 /*
  * Copyright 2014 Dhyan Blum
@@ -40,7 +41,7 @@ import static java.lang.System.arraycopy;
  * <p>
  *
  * <pre>
- * final GifImage gifImage = GifDecoder.read(int[] data);
+ * final GifImage gifImage = at.dhyan.open_imaging.GifDecoder.read(int[] data);
  * final int width = gifImage.getWidth();
  * final int height = gifImage.getHeight();
  * final int frameCount = gifImage.getFrameCount();
@@ -132,8 +133,8 @@ public final class GifDecoder {
             for (int c = numColors - 1; c >= 0; c--) {
                 table[c][0] = activeColTbl[c]; // Translated color
             } // A gap may follow with no colors assigned if numCols < CLEAR
-            table[fr.clearCode] = new int[]{fr.clearCode}; // CLEAR
-            table[fr.endOfInfoCode] = new int[]{fr.endOfInfoCode}; // EOI
+            table[fr.clearCode] = new int[] {fr.clearCode}; // CLEAR
+            table[fr.endOfInfoCode] = new int[] {fr.endOfInfoCode}; // EOI
             // Locate transparent color in code table and set to 0
             if (fr.transpColFlag && fr.transpColIndex < numColors) {
                 table[fr.transpColIndex][0] = 0;
@@ -156,8 +157,10 @@ public final class GifDecoder {
         private int wh; // width * height
         private boolean hasLocColTbl; // Has local color table? 1 Bit
         private boolean interlaceFlag; // Is an interlace image? 1 Bit
+
         @SuppressWarnings("unused")
         private boolean sortFlag; // True if local colors are sorted, 1 Bit
+
         private int sizeOfLocColTbl; // Size of the local color table, 3 Bits
         private int[] localColTbl; // Local color table (optional)
         // Image data
@@ -272,7 +275,7 @@ public final class GifDecoder {
             if (fr.interlaceFlag) {
                 pixels = deinterlace(pixels, fr); // Rearrange pixel lines
             }
-            // Create image of type 2=ARGB for frame area
+            // com.afarrukh.giftools.Create image of type 2=ARGB for frame area
             final BufferedImage frame = new BufferedImage(fr.w, fr.h, 2);
             arraycopy(pixels, 0, ((DataBufferInt) frame.getRaster().getDataBuffer()).getData(), 0, fr.wh);
             // Draw frame area on top of working image
@@ -292,7 +295,7 @@ public final class GifDecoder {
             int[] prevPx = new int[wh];
             arraycopy(((DataBufferInt) img.getRaster().getDataBuffer()).getData(), 0, prevPx, 0, wh);
 
-            // Create another copy for the end user to not expose internal state
+            // com.afarrukh.giftools.Create another copy for the end user to not expose internal state
             fr.img = new BufferedImage(w, h, 2); // 2 = ARGB
             arraycopy(prevPx, 0, ((DataBufferInt) fr.img.getRaster().getDataBuffer()).getData(), 0, wh);
 

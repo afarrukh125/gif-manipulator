@@ -1,5 +1,5 @@
-//
-//  GifSequenceWriter.java
+package at.dhyan.open_imaging; //
+//  at.dhyan.open_imaging.GifSequenceWriter.java
 //
 //  Created by Elliot Kroo on 2009-04-25.
 //
@@ -8,13 +8,13 @@
 // http://creativecommons.org/licenses/by/3.0/ or send a letter to Creative
 // Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
 
+import java.awt.image.RenderedImage;
+import java.io.IOException;
+import java.util.Iterator;
 import javax.imageio.*;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageOutputStream;
-import java.awt.image.RenderedImage;
-import java.io.IOException;
-import java.util.Iterator;
 
 /**
  * Credit: https://web.archive.org/web/20191226041038/elliot.kroo.net/software/java/GifSequenceWriter/GifSequenceWriter.java
@@ -25,7 +25,7 @@ public class GifSequenceWriter {
     protected IIOMetadata imageMetaData;
 
     /**
-     * Creates a new GifSequenceWriter
+     * Creates a new at.dhyan.open_imaging.GifSequenceWriter
      *
      * @param outputStream        the ImageOutputStream to be written to
      * @param imageType           one of the imageTypes specified in BufferedImage
@@ -35,47 +35,31 @@ public class GifSequenceWriter {
      * @author Elliot Kroo (elliot[at]kroo[dot]net)
      */
     public GifSequenceWriter(
-            ImageOutputStream outputStream,
-            int imageType,
-            int timeBetweenFramesMS,
-            boolean loopContinuously) throws IOException {
+            ImageOutputStream outputStream, int imageType, int timeBetweenFramesMS, boolean loopContinuously)
+            throws IOException {
         // my method to create a writer
         gifWriter = getWriter();
         imageWriteParam = gifWriter.getDefaultWriteParam();
-        ImageTypeSpecifier imageTypeSpecifier =
-                ImageTypeSpecifier.createFromBufferedImageType(imageType);
+        ImageTypeSpecifier imageTypeSpecifier = ImageTypeSpecifier.createFromBufferedImageType(imageType);
 
-        imageMetaData =
-                gifWriter.getDefaultImageMetadata(imageTypeSpecifier,
-                        imageWriteParam);
+        imageMetaData = gifWriter.getDefaultImageMetadata(imageTypeSpecifier, imageWriteParam);
 
         String metaFormatName = imageMetaData.getNativeMetadataFormatName();
 
-        IIOMetadataNode root = (IIOMetadataNode)
-                imageMetaData.getAsTree(metaFormatName);
+        IIOMetadataNode root = (IIOMetadataNode) imageMetaData.getAsTree(metaFormatName);
 
-        IIOMetadataNode graphicsControlExtensionNode = getNode(
-                root,
-                "GraphicControlExtension");
+        IIOMetadataNode graphicsControlExtensionNode = getNode(root, "GraphicControlExtension");
 
         graphicsControlExtensionNode.setAttribute("disposalMethod", "none");
         graphicsControlExtensionNode.setAttribute("userInputFlag", "FALSE");
-        graphicsControlExtensionNode.setAttribute(
-                "transparentColorFlag",
-                "FALSE");
-        graphicsControlExtensionNode.setAttribute(
-                "delayTime",
-                Integer.toString(timeBetweenFramesMS / 10));
-        graphicsControlExtensionNode.setAttribute(
-                "transparentColorIndex",
-                "0");
+        graphicsControlExtensionNode.setAttribute("transparentColorFlag", "FALSE");
+        graphicsControlExtensionNode.setAttribute("delayTime", Integer.toString(timeBetweenFramesMS / 10));
+        graphicsControlExtensionNode.setAttribute("transparentColorIndex", "0");
 
         IIOMetadataNode commentsNode = getNode(root, "CommentExtensions");
         commentsNode.setAttribute("CommentExtension", "Created by MAH");
 
-        IIOMetadataNode appEntensionsNode = getNode(
-                root,
-                "ApplicationExtensions");
+        IIOMetadataNode appEntensionsNode = getNode(root, "ApplicationExtensions");
 
         IIOMetadataNode child = new IIOMetadataNode("ApplicationExtension");
 
@@ -84,8 +68,7 @@ public class GifSequenceWriter {
 
         int loop = loopContinuously ? 0 : 1;
 
-        child.setUserObject(new byte[]{0x1, (byte) (loop & 0xFF), (byte)
-                ((loop >> 8) & 0xFF)});
+        child.setUserObject(new byte[] {0x1, (byte) (loop & 0xFF), (byte) ((loop >> 8) & 0xFF)});
         appEntensionsNode.appendChild(child);
 
         imageMetaData.setFromTree(metaFormatName, root);
@@ -119,13 +102,10 @@ public class GifSequenceWriter {
      * @param nodeName the name of the child node.
      * @return the child node, if found or a new node created with the given name.
      */
-    private static IIOMetadataNode getNode(
-            IIOMetadataNode rootNode,
-            String nodeName) {
+    private static IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
         int nNodes = rootNode.getLength();
         for (int i = 0; i < nNodes; i++) {
-            if (rootNode.item(i).getNodeName().compareToIgnoreCase(nodeName)
-                    == 0) {
+            if (rootNode.item(i).getNodeName().compareToIgnoreCase(nodeName) == 0) {
                 return ((IIOMetadataNode) rootNode.item(i));
             }
         }
@@ -135,21 +115,14 @@ public class GifSequenceWriter {
     }
 
     public void writeToSequence(RenderedImage img) throws IOException {
-        gifWriter.writeToSequence(
-                new IIOImage(
-                        img,
-                        null,
-                        imageMetaData),
-                imageWriteParam);
+        gifWriter.writeToSequence(new IIOImage(img, null, imageMetaData), imageWriteParam);
     }
 
     /**
-     * Close this GifSequenceWriter object. This does not close the underlying
+     * Close this at.dhyan.open_imaging.GifSequenceWriter object. This does not close the underlying
      * stream, just finishes off the GIF.
      */
     public void close() throws IOException {
         gifWriter.endWriteSequence();
     }
-
-
 }
