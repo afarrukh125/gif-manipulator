@@ -22,15 +22,15 @@ public class Reinstate {
                         + "folder of .png files numbered in some ordering. If you don't please use the creator to generate "
                         + ".png files from a GIF.");
 
-        String path = "";
+        var path = "";
 
         if (args.length == 0) {
-            JFileChooser chooser = new JFileChooser();
+            var chooser = new JFileChooser();
             chooser.setCurrentDirectory(new File(System.getProperty("user.home")));
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             int result = chooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
-                File selectedFile = chooser.getSelectedFile();
+                var selectedFile = chooser.getSelectedFile();
                 if (!selectedFile.isDirectory()) {
                     JOptionPane.showMessageDialog(null, "Please select a folder.");
                     System.exit(0);
@@ -38,20 +38,20 @@ public class Reinstate {
             }
         }
         System.out.println(path);
-        String newLocation = new File(path.replace(".gif", "")).getAbsolutePath();
+        var newLocation = new File(path.replace(".gif", "")).getAbsolutePath();
         reinstate(newLocation, 0);
     }
 
     private static void reinstate(String outPath, int startIdx) throws IOException {
-        File directory = new File(outPath);
+        var directory = new File(outPath);
         System.out.println(directory.isDirectory());
 
         if (directory.isDirectory()) {
-            File[] fileArr = Objects.requireNonNull(directory.listFiles(), "Need a directory");
+            var fileArr = Objects.requireNonNull(directory.listFiles(), "Need a directory");
 
-            List<File> files = Arrays.stream(fileArr).collect(Collectors.toList());
+            var files = Arrays.stream(fileArr).collect(Collectors.toList());
 
-            List<File> copyList = new ArrayList<>(files);
+            var copyList = new ArrayList<>(files);
             Utils.quickSort(
                     copyList,
                     Comparator.comparingInt(o -> Integer.parseInt(o.getName().replace(".png", ""))));
@@ -72,22 +72,22 @@ public class Reinstate {
 
             int numFiles = files.size();
 
-            ImageOutputStream output = new FileImageOutputStream(new File(outPath + ".gif"));
+            var output = new FileImageOutputStream(new File(outPath + ".gif"));
 
-            BufferedImage firstImage = ImageIO.read(files.get(startIdx));
+            var firstImage = ImageIO.read(files.get(startIdx));
 
-            GifSequenceWriter writer = new GifSequenceWriter(output, firstImage.getType(), 1, true);
+            var writer = new GifSequenceWriter(output, firstImage.getType(), 1, true);
 
             writer.writeToSequence(firstImage);
 
             for (int i = startIdx + 1; i < numFiles; i++) {
-                File file = files.get(i);
+                var file = files.get(i);
                 writer.writeToSequence(ImageIO.read(file));
                 System.out.println(file.getName());
             }
 
             for (int i = 0; i < startIdx; i++) {
-                File file = files.get(i);
+                var file = files.get(i);
                 writer.writeToSequence(ImageIO.read(file));
                 System.out.println(file.getName());
             }
@@ -98,9 +98,9 @@ public class Reinstate {
     }
 
     private static BufferedImage flip(BufferedImage image) {
-        AffineTransform tx = AffineTransform.getScaleInstance(-1, 1);
+        var tx = AffineTransform.getScaleInstance(-1, 1);
         tx.translate(-image.getWidth(null), 0);
-        AffineTransformOp op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+        var op = new AffineTransformOp(tx, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
         return op.filter(image, null);
     }
 }
