@@ -13,13 +13,17 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Command(name = "reinstate")
 public class ReinstateCommand implements Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(ReinstateCommand.class);
 
     @Option(name = "--folder-path")
     private String folderPath;
@@ -45,6 +49,7 @@ public class ReinstateCommand implements Runnable {
                 } else folderPath = selectedFile.getAbsolutePath();
             }
         }
+        LOG.info("Selected folder path: {}", folderPath);
         System.out.println(folderPath);
         var newLocation = new File(folderPath.replace(".gif", "")).getAbsolutePath();
         try {
@@ -56,7 +61,7 @@ public class ReinstateCommand implements Runnable {
 
     private static void reinstate(String outPath, int startIdx) throws IOException {
         var directory = new File(outPath);
-        System.out.println(directory.isDirectory());
+        LOG.info("Directory: {}", directory.isDirectory());
 
         if (directory.isDirectory()) {
             var fileArr = Objects.requireNonNull(directory.listFiles(), "Need a directory");
@@ -68,44 +73,49 @@ public class ReinstateCommand implements Runnable {
                     copyList,
                     Comparator.comparingInt(o -> Integer.parseInt(o.getName().replace(".png", ""))));
 
-            if (copyList.size() == 0) {
-                System.out.println("No numbered .png files found");
+            if (copyList.isEmpty()) {
+                LOG.error("No numbered .png files found");
                 System.exit(0);
             }
 
             if (startIdx >= copyList.size()) {
-                System.out.println(
-                        "Can't start looping at that index, it is higher than how many numbered files there are: "
-                                + copyList.size());
+                LOG.info(
+                        "Can't start looping at that index, it is higher than how many numbered files there are: {}",
+                        copyList.size());
                 System.exit(0);
             }
 
             files = copyList;
-
             int numFiles = files.size();
-
             var output = new FileImageOutputStream(new File(outPath + ".gif"));
-
             var firstImage = ImageIO.read(files.get(startIdx));
-
             var writer = new GifSequenceWriter(output, firstImage.getType(), 1, true);
 
-            writer.writeToSequence(firstImage);
+            writeToSequence(firstImage, writer);
 
-            for (int i = startIdx + 1; i < numFiles; i++) {
-                var file = files.get(i);
-                writer.writeToSequence(ImageIO.read(file));
-                System.out.println(file.getName());
-            }
-
-            for (int i = 0; i < startIdx; i++) {
-                var file = files.get(i);
-                writer.writeToSequence(ImageIO.read(file));
-                System.out.println(file.getName());
-            }
+            Stream.concat(files.subList(startIdx + 1, numFiles).stream(), files.subList(0, startIdx).stream())
+                    .peek(file -> LOG.info("Preparing to write file: {}", file.getName()))
+                    .map(ReinstateCommand::createBufferedImageFromFile)
+                    .forEach(img -> writeToSequence(img, writer));
 
             writer.close();
             output.close();
+        }
+    }
+
+    private static void writeToSequence(BufferedImage img, GifSequenceWriter writer) {
+        try {
+            writer.writeToSequence(img);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static BufferedImage createBufferedImageFromFile(File file) {
+        try {
+            return ImageIO.read(file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -18,22 +18,24 @@ public class Utils {
             return (BufferedImage) img;
         }
 
-        // Create a buffered image with transparency
-        BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        // BufferedImage.TYPE_INT_ARGB for transparency
+        var image = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
 
         // Draw the image on to the buffered image
-        Graphics2D bGr = bimage.createGraphics();
-        bGr.drawImage(img, 0, 0, null);
-        bGr.dispose();
+        var graphics = image.createGraphics();
+        graphics.drawImage(img, 0, 0, null);
+        graphics.dispose();
 
         // Return the buffered image
-        return bimage;
+        return image;
     }
 
     public static <E> void quickSort(List<E> ls, Comparator<E> comp) {
-        if (ls.size() <= 1) return;
+        if (ls.size() <= 1) {
+            return;
+        }
 
-        E pivot = ls.get(0);
+        E pivot = ls.getFirst();
 
         List<E> smaller = new ArrayList<>();
         List<E> larger = new ArrayList<>();
