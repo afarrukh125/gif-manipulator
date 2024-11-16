@@ -9,7 +9,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -82,8 +81,8 @@ public class Create {
     }
 
     private static void writeParallel(FileInputStream data, String outFileName) throws IOException {
-         var gif = GifDecoder.read(data);
-         int frameCount = gif.getFrameCount();
+        var gif = GifDecoder.read(data);
+        int frameCount = gif.getFrameCount();
         try (var executorService = newFixedThreadPool(getRuntime().availableProcessors() * 2)) {
             for (int i = 0; i < frameCount; i++) {
                 var img = gif.getFrame(i);

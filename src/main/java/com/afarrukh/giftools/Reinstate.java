@@ -10,7 +10,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageOutputStream;
-import javax.imageio.stream.ImageOutputStream;
 import javax.swing.*;
 
 public class Reinstate {
