@@ -24,7 +24,7 @@ public class CreateCommand implements Runnable {
 
     public void run() {
         if (filePath == null) {
-            setupUILookAndFeel();
+            Utils.setupUILookAndFeel();
             var chooser = setupFileChooser();
             int result = chooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
@@ -59,17 +59,6 @@ public class CreateCommand implements Runnable {
         var fileFilter = new FileNameExtensionFilter("GIF files", "gif");
         chooser.addChoosableFileFilter(fileFilter);
         return chooser;
-    }
-
-    static void setupUILookAndFeel() {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException
-                | UnsupportedLookAndFeelException
-                | IllegalAccessException
-                | InstantiationException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**

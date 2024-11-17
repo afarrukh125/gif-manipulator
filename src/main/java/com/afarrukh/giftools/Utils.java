@@ -1,5 +1,7 @@
 package com.afarrukh.giftools;
 
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -60,5 +62,14 @@ public class Utils {
         ls.addAll(larger);
     }
 
-    public static void main(String[] args) {}
+    static void setupUILookAndFeel() {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException
+                 | UnsupportedLookAndFeelException
+                 | IllegalAccessException
+                 | InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

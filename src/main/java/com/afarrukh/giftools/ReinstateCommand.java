@@ -32,7 +32,7 @@ public class ReinstateCommand implements Runnable {
     private int startIndex = 0;
 
     public void run() {
-        CreateCommand.setupUILookAndFeel();
+        Utils.setupUILookAndFeel();
 
         if (folderPath == null) {
             JOptionPane.showMessageDialog(

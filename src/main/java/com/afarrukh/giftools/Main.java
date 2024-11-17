@@ -7,6 +7,7 @@ public class Main {
         var cli = new CliBuilder<Runnable>("giftools")
                 .withCommand(CreateCommand.class)
                 .withCommand(ReinstateCommand.class)
+                .withCommand(StartGuiCommand.class)
                 .build();
         cli.parse(args).run();
     }
