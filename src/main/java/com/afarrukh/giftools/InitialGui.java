@@ -4,11 +4,12 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-public class GUIMain {
+public class InitialGui {
     private JPanel mainPanel;
     private JLabel titleLabel;
     private JButton createImagesFromGifButton;
     private JButton createGifFromImagesButton;
+    private JButton manipulateGifButton;
 
     public JPanel mainPanel() {
         return mainPanel;
@@ -20,5 +21,9 @@ public class GUIMain {
 
     public JButton createGifFromImagesButton() {
         return createGifFromImagesButton;
+    }
+
+    public JButton manipulateGifButton() {
+        return manipulateGifButton;
     }
 }

@@ -8,6 +8,7 @@ public class Main {
                 .withCommand(CreateCommand.class)
                 .withCommand(ReinstateCommand.class)
                 .withCommand(StartGuiCommand.class)
+                .withCommand(ManipulateGifCommand.class)
                 .build();
         cli.parse(args).run();
     }
