@@ -8,10 +8,7 @@ import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
@@ -96,13 +93,22 @@ public class ReinstateCommand implements Runnable {
 
             writeToSequence(firstImage, writer);
 
-            Stream.concat(files.subList(startIdx + 1, numFiles).stream(), files.subList(0, startIdx).stream())
+            var images = Stream.concat(
+                            files.subList(startIdx + 1, numFiles).stream(), files.subList(0, startIdx).stream())
+                    .parallel()
                     .peek(file -> LOG.info("Preparing to write file: {}", file.getName()))
                     .map(ReinstateCommand::createBufferedImageFromFile)
-                    .forEach(img -> writeToSequence(img, writer));
+                    .toList();
+
+            for (var img : images) {
+                writeToSequence(img, writer);
+            }
 
             writer.close();
             output.close();
+
+            LOG.info("Finished converting {} images to GIF", numFiles);
+            JOptionPane.showMessageDialog(null, "Converted " + numFiles + " images to GIF");
         }
     }
 

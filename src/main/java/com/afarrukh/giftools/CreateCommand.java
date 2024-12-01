@@ -6,7 +6,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 import at.dhyan.open_imaging.GifDecoder;
 import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
-import java.awt.Image;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,9 +15,13 @@ import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Command(name = "create")
 public class CreateCommand implements Runnable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CreateCommand.class);
 
     @Option(name = "--file-path")
     private String filePath;
@@ -41,11 +45,6 @@ public class CreateCommand implements Runnable {
             data = new FileInputStream(filePath);
             var finalLocation = "target/" + new File(filePath).getName().replace(".gif", "");
             writeImages(data, finalLocation);
-            var outputAbsolutePath = new File(finalLocation).getAbsolutePath();
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Converted " + new File(filePath).getName()
-                            + " to images successfully! Check the files in directory " + outputAbsolutePath + ".");
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -61,28 +60,32 @@ public class CreateCommand implements Runnable {
         return chooser;
     }
 
-    /**
-     * Writes the actual images
-     * @param data The input stream to use to write
-     * @param outFileName The name of the folder, by default, the name of the file
-     * @throws IOException If file not found or similar
-     */
-    private static void writeImages(FileInputStream data, String outFileName) throws IOException, InterruptedException {
-        writeParallel(data, outFileName);
-    }
-
-    private static void writeParallel(FileInputStream data, String outFileName)
+    private static void writeImages(FileInputStream data, String outputFolder)
             throws IOException, InterruptedException {
         var gif = GifDecoder.read(data);
         int frameCount = gif.getFrameCount();
         try (var executorService = newFixedThreadPool(getRuntime().availableProcessors() * 2)) {
             for (int i = 0; i < frameCount; i++) {
                 var img = gif.getFrame(i);
-                int finalI = i;
-                executorService.execute(() -> outputFrame(outFileName, finalI, img));
+                int index = i;
+                executorService.execute(() -> outputFrame(outputFolder, index, img));
             }
             executorService.shutdown();
             executorService.awaitTermination(5, TimeUnit.MINUTES);
+        }
+        openFolder(outputFolder);
+    }
+
+    private static void openFolder(String outputFolder) {
+        if (Desktop.isDesktopSupported()) {
+            Desktop desktop = Desktop.getDesktop();
+            try {
+                desktop.open(new File(outputFolder));
+            } catch (IOException e) {
+                LOG.info("Could not open folder");
+            }
+        } else {
+            LOG.info("Converted GIF to images successfully! Check the files in directory {}", outputFolder);
         }
     }
 
@@ -94,35 +97,6 @@ public class CreateCommand implements Runnable {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }
-    }
-
-    private static void writeSingleThreaded(FileInputStream data, String outFileName) throws IOException {
-        var gif = GifDecoder.read(data);
-        int frameCount = gif.getFrameCount();
-        for (int i = 0; i < frameCount; i++) {
-            var img = gif.getFrame(i);
-            outputFrame(outFileName, i, img);
-        }
-    }
-
-    /**
-     * Writes the actual images
-     * @param data The input stream to use to write
-     * @param outFileName The name of the folder, by default, the name of the file
-     * @param xResolution The x resolution to scale to
-     * @param yResolution The y resolution to scale to
-     * @throws IOException If file not found or similar
-     */
-    private static void writeImages(FileInputStream data, String outFileName, int xResolution, int yResolution)
-            throws IOException {
-        var gif = GifDecoder.read(data);
-        int frameCount = gif.getFrameCount();
-        for (int i = 0; i < frameCount; i++) {
-            var img = gif.getFrame(i);
-            img = Utils.toBufferedImage(img.getScaledInstance(xResolution, yResolution, Image.SCALE_DEFAULT));
-            var file = new File(outFileName + "/" + i + ".png");
-            if (file.mkdirs()) ImageIO.write(img, "png", file);
         }
     }
 }
