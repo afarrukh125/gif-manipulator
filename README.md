@@ -11,6 +11,21 @@ mvn package
 ## Run
 
 ```
+./run.sh      # macOS, Linux, Git Bash
+./run.ps1     # PowerShell
+```
+
+Either script builds the jar if it is missing, then starts the editor on http://localhost:8080 and opens it in
+your browser. Set `PORT` to listen somewhere else, and anything you pass the script goes on to `serve`:
+
+```
+PORT=9000 ./run.sh
+./run.sh --no-open
+```
+
+### Without the scripts
+
+```
 java -jar target/giftools.jar
 ```
 
