@@ -119,6 +119,24 @@ public class GifSequenceWriter {
     }
 
     /**
+     * Appends a frame that is shown for its own amount of time, rather than the one given to the constructor.
+     *
+     * @param img               the frame to append
+     * @param delayHundredths   how long the frame is shown, in hundredths of a second
+     */
+    public void writeToSequence(RenderedImage img, int delayHundredths) throws IOException {
+        setDelayTime(delayHundredths);
+        writeToSequence(img);
+    }
+
+    private void setDelayTime(int delayHundredths) throws IOException {
+        String metaFormatName = imageMetaData.getNativeMetadataFormatName();
+        IIOMetadataNode root = (IIOMetadataNode) imageMetaData.getAsTree(metaFormatName);
+        getNode(root, "GraphicControlExtension").setAttribute("delayTime", Integer.toString(delayHundredths));
+        imageMetaData.setFromTree(metaFormatName, root);
+    }
+
+    /**
      * Close this at.dhyan.open_imaging.GifSequenceWriter object. This does not close the underlying
      * stream, just finishes off the GIF.
      */

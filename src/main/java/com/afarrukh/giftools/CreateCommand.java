@@ -11,6 +11,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -86,6 +88,13 @@ public class CreateCommand implements Runnable {
             throws IOException, InterruptedException {
         var gif = GifDecoder.read(data);
         int frameCount = gif.getFrameCount();
+        var outDir = new File(outFileName);
+        Files.createDirectories(outDir.toPath());
+        var delays = new ArrayList<Integer>(frameCount);
+        for (int i = 0; i < frameCount; i++) {
+            delays.add(gif.getDelay(i));
+        }
+        Utils.writeDelays(outDir, delays);
         try (var executorService = newFixedThreadPool(getRuntime().availableProcessors() * 2)) {
             for (int i = 0; i < frameCount; i++) {
                 var img = gif.getFrame(i);
@@ -99,18 +108,17 @@ public class CreateCommand implements Runnable {
 
     private static void outputFrame(String outFileName, int index, BufferedImage img) {
         var file = new File(outFileName + "/" + index + ".png");
-        if (file.mkdirs()) {
-            try {
-                ImageIO.write(img, "png", file);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            ImageIO.write(img, "png", file);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     private static void writeSingleThreaded(FileInputStream data, String outFileName) throws IOException {
         var gif = GifDecoder.read(data);
         int frameCount = gif.getFrameCount();
+        Files.createDirectories(new File(outFileName).toPath());
         for (int i = 0; i < frameCount; i++) {
             var img = gif.getFrame(i);
             outputFrame(outFileName, i, img);
