@@ -25,8 +25,8 @@ public final class GifServer {
 
     private GifServer() {}
 
-    public static Javalin start(int port) {
-        return new GifServer().create().start(port);
+    public static Javalin start(String host, int port) {
+        return new GifServer().create().start(host, port);
     }
 
     private Javalin create() {
