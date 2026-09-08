@@ -283,6 +283,9 @@ public final class GifDecoder {
             // com.afarrukh.giftools.Create image of type 2=ARGB for frame area
             final BufferedImage frame = new BufferedImage(fr.w, fr.h, 2);
             arraycopy(pixels, 0, ((DataBufferInt) frame.getRaster().getDataBuffer()).getData(), 0, fr.wh);
+            final int[] canvasPx = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+            // Disposal 3 hands the next frame the canvas as it stood before this one, so it has to be kept now.
+            final int[] beforeDraw = fr.disposalMethod == 3 ? canvasPx.clone() : null;
             // Draw frame area on top of working image
             g.drawImage(frame, fr.x, fr.y, null);
 
@@ -296,21 +299,17 @@ public final class GifDecoder {
             // g.drawRect(fr.x, fr.y, fr.w - 1, fr.h - 1);
             // }
 
-            // Keep a copy of the previous frame's pixels in case we need to restore the frame
-            int[] prevPx = new int[wh];
-            arraycopy(((DataBufferInt) img.getRaster().getDataBuffer()).getData(), 0, prevPx, 0, wh);
-
             // com.afarrukh.giftools.Create another copy for the end user to not expose internal state
             fr.img = new BufferedImage(w, h, 2); // 2 = ARGB
-            arraycopy(prevPx, 0, ((DataBufferInt) fr.img.getRaster().getDataBuffer()).getData(), 0, wh);
+            arraycopy(canvasPx, 0, ((DataBufferInt) fr.img.getRaster().getDataBuffer()).getData(), 0, wh);
 
             // Handle disposal of current frame
             if (fr.disposalMethod == 2) {
                 // Restore to background color (clear frame area only)
                 g.clearRect(fr.x, fr.y, fr.w, fr.h);
-            } else if (fr.disposalMethod == 3) {
+            } else if (beforeDraw != null) {
                 // Restore previous frame
-                arraycopy(prevPx, 0, ((DataBufferInt) img.getRaster().getDataBuffer()).getData(), 0, wh);
+                arraycopy(beforeDraw, 0, canvasPx, 0, wh);
             }
         }
 
