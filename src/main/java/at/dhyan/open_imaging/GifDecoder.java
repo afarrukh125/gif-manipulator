@@ -130,9 +130,14 @@ public final class GifDecoder {
             initCodeLimit = (1 << initCodeSize) - 1; // 2^initCodeSize - 1
             initTableSize = fr.endOfInfoCode + 1;
             nextCode = initTableSize;
+            // A fresh array per entry, never a write into the one already there: the previous frame's dictionary
+            // left longer arrays in these slots, and reusing one would emit its whole run for a single colour.
             for (int c = numColors - 1; c >= 0; c--) {
-                table[c][0] = activeColTbl[c]; // Translated color
+                table[c] = new int[] {activeColTbl[c]}; // Translated color
             } // A gap may follow with no colors assigned if numCols < CLEAR
+            for (int c = numColors; c < fr.clearCode; c++) {
+                table[c] = new int[] {0};
+            }
             table[fr.clearCode] = new int[] {fr.clearCode}; // CLEAR
             table[fr.endOfInfoCode] = new int[] {fr.endOfInfoCode}; // EOI
             // Locate transparent color in code table and set to 0
