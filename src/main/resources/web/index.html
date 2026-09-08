@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GIF Tools</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞️</text></svg>">
+</head>
+<body>
+<div id="drop-overlay" hidden>
+    <div class="drop-card">Drop the GIF anywhere</div>
+</div>
+
+<header>
+    <h1><span class="mark">◉</span> GIF Tools</h1>
+    <div class="header-actions">
+        <span id="source-name" class="source-name"></span>
+        <button id="change-file" class="ghost" hidden>Open another</button>
+    </div>
+</header>
+
+<main>
+    <div id="error" class="error" hidden></div>
+
+    <section id="landing">
+        <label class="dropzone" for="file-input">
+            <div class="dropzone-inner">
+                <div class="dropzone-icon">↓</div>
+                <h2>Drop a GIF here</h2>
+                <p>or click to choose one. Nothing leaves this machine.</p>
+            </div>
+        </label>
+        <input id="file-input" type="file" accept="image/gif,.gif" hidden>
+    </section>
+
+    <div id="editor" hidden>
+        <aside id="controls">
+            <details class="group" open>
+                <summary>Playback</summary>
+                <div class="group-body">
+                    <label class="check accent">
+                        <input type="checkbox" data-opt="reverse">
+                        <span>Reverse</span>
+                        <small>Play the frames back to front</small>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" data-opt="boomerang">
+                        <span>Boomerang</span>
+                        <small>Forwards, then backwards again</small>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" data-opt="loop" checked>
+                        <span>Loop forever</span>
+                        <small>Off plays the animation once</small>
+                    </label>
+
+                    <div class="field">
+                        <div class="field-head">
+                            <label for="speed">Speed</label>
+                            <output id="speed-out">1.00&times;</output>
+                        </div>
+                        <input id="speed" type="range" data-opt="speed" min="0.1" max="5" step="0.05" value="1">
+                    </div>
+
+                    <div class="field">
+                        <div class="field-head">
+                            <label for="frameDelayMs">Fixed frame delay</label>
+                            <output id="delay-out">original</output>
+                        </div>
+                        <input id="frameDelayMs" type="range" data-opt="frameDelayMs" min="0" max="500" step="10" value="0">
+                        <small class="hint">0 keeps the delays the source recorded</small>
+                    </div>
+                </div>
+            </details>
+
+            <details class="group" open>
+                <summary>Frames</summary>
+                <div class="group-body">
+                    <div class="field">
+                        <div class="field-head">
+                            <label>Range</label>
+                            <output id="range-out">all</output>
+                        </div>
+                        <input id="startFrame" type="range" data-opt="startFrame" min="0" max="0" step="1" value="0">
+                        <input id="endFrame" type="range" data-opt="endFrame" min="0" max="0" step="1" value="0">
+                    </div>
+
+                    <div class="field">
+                        <div class="field-head">
+                            <label for="frameStep">Keep every</label>
+                            <output id="step-out">frame</output>
+                        </div>
+                        <input id="frameStep" type="range" data-opt="frameStep" min="1" max="10" step="1" value="1">
+                        <small class="hint">Dropped frames hand their time to the frame that replaces them</small>
+                    </div>
+
+                    <div class="field">
+                        <div class="field-head">
+                            <label for="startOffset">Start at frame</label>
+                            <output id="offset-out">0</output>
+                        </div>
+                        <input id="startOffset" type="range" data-opt="startOffset" min="0" max="0" step="1" value="0">
+                        <small class="hint">Rotates the loop without dropping anything</small>
+                    </div>
+                </div>
+            </details>
+
+            <details class="group" open>
+                <summary>Size</summary>
+                <div class="group-body">
+                    <div class="pair">
+                        <div class="field">
+                            <label for="width">Width</label>
+                            <input id="width" type="number" data-opt="width" min="0" max="2000" step="1" value="0" placeholder="auto">
+                        </div>
+                        <div class="field">
+                            <label for="height">Height</label>
+                            <input id="height" type="number" data-opt="height" min="0" max="2000" step="1" value="0" placeholder="auto">
+                        </div>
+                    </div>
+                    <label class="check">
+                        <input type="checkbox" id="lock-aspect" checked>
+                        <span>Lock aspect ratio</span>
+                    </label>
+                    <div class="chips" id="scale-presets">
+                        <button type="button" data-scale="0.25">25%</button>
+                        <button type="button" data-scale="0.5">50%</button>
+                        <button type="button" data-scale="1">100%</button>
+                        <button type="button" data-scale="2">200%</button>
+                    </div>
+                </div>
+            </details>
+
+            <details class="group" open>
+                <summary>Transform</summary>
+                <div class="group-body">
+                    <div class="field">
+                        <label>Rotate</label>
+                        <div class="chips" id="rotation-chips">
+                            <button type="button" data-rotation="0" class="on">0&deg;</button>
+                            <button type="button" data-rotation="90">90&deg;</button>
+                            <button type="button" data-rotation="180">180&deg;</button>
+                            <button type="button" data-rotation="270">270&deg;</button>
+                        </div>
+                    </div>
+                    <label class="check">
+                        <input type="checkbox" data-opt="flipHorizontal">
+                        <span>Flip horizontally</span>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" data-opt="flipVertical">
+                        <span>Flip vertically</span>
+                    </label>
+                </div>
+            </details>
+
+            <details class="group" id="crop-group">
+                <summary>Crop</summary>
+                <div class="group-body">
+                    <p class="hint">Drag on the frame below to pick a region, then drag inside it to move it.</p>
+                    <div id="crop-stage">
+                        <img id="crop-image" alt="First frame of the source GIF">
+                        <div id="crop-box" hidden></div>
+                    </div>
+                    <div class="pair">
+                        <div class="field">
+                            <label for="cropX">X</label>
+                            <input id="cropX" type="number" data-opt="cropX" min="0" step="1" value="0">
+                        </div>
+                        <div class="field">
+                            <label for="cropY">Y</label>
+                            <input id="cropY" type="number" data-opt="cropY" min="0" step="1" value="0">
+                        </div>
+                    </div>
+                    <div class="pair">
+                        <div class="field">
+                            <label for="cropWidth">Width</label>
+                            <input id="cropWidth" type="number" data-opt="cropWidth" min="0" step="1" value="0">
+                        </div>
+                        <div class="field">
+                            <label for="cropHeight">Height</label>
+                            <input id="cropHeight" type="number" data-opt="cropHeight" min="0" step="1" value="0">
+                        </div>
+                    </div>
+                    <button type="button" class="ghost wide" id="clear-crop">Clear crop</button>
+                </div>
+            </details>
+
+            <details class="group">
+                <summary>Colour</summary>
+                <div class="group-body">
+                    <label class="check">
+                        <input type="checkbox" data-opt="grayscale">
+                        <span>Greyscale</span>
+                    </label>
+                    <label class="check">
+                        <input type="checkbox" data-opt="invert">
+                        <span>Invert</span>
+                    </label>
+                    <div class="field">
+                        <div class="field-head">
+                            <label for="brightness">Brightness</label>
+                            <output id="brightness-out">1.00</output>
+                        </div>
+                        <input id="brightness" type="range" data-opt="brightness" min="0.2" max="2.5" step="0.05" value="1">
+                    </div>
+                    <div class="field">
+                        <div class="field-head">
+                            <label for="contrast">Contrast</label>
+                            <output id="contrast-out">1.00</output>
+                        </div>
+                        <input id="contrast" type="range" data-opt="contrast" min="0.2" max="2.5" step="0.05" value="1">
+                    </div>
+                    <div class="field">
+                        <div class="field-head">
+                            <label for="saturation">Saturation</label>
+                            <output id="saturation-out">1.00</output>
+                        </div>
+                        <input id="saturation" type="range" data-opt="saturation" min="0" max="3" step="0.05" value="1">
+                    </div>
+                </div>
+            </details>
+
+            <button type="button" class="ghost wide" id="reset">Reset everything</button>
+        </aside>
+
+        <section id="stage">
+            <div class="stage-head">
+                <div class="chips" id="view-tabs">
+                    <button type="button" data-view="result" class="on">Result</button>
+                    <button type="button" data-view="original">Original</button>
+                </div>
+                <div class="stage-status">
+                    <span id="spinner" class="spinner" hidden></span>
+                    <button id="download" class="primary" disabled>Download</button>
+                </div>
+            </div>
+
+            <div id="canvas">
+                <img id="preview" alt="The GIF you are editing">
+            </div>
+
+            <dl id="stats">
+                <div><dt>Size</dt><dd id="stat-size">&mdash;</dd></div>
+                <div><dt>Frames</dt><dd id="stat-frames">&mdash;</dd></div>
+                <div><dt>Duration</dt><dd id="stat-duration">&mdash;</dd></div>
+                <div><dt>Weight</dt><dd id="stat-bytes">&mdash;</dd></div>
+            </dl>
+        </section>
+    </div>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>
