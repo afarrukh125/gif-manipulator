@@ -14,7 +14,13 @@ public final class GifProcessor {
 
     public static final int MAX_DIMENSION = 2000;
 
-    /** Renderers substitute a tenth of a second for delays shorter than this, so a smaller one would slow the GIF. */
+    private static final int DEFAULT_DELAY_HUNDREDTHS = 10;
+
+    /**
+     * Renderers do not play a delay this short literally, they substitute a tenth of a second. A source frame below it
+     * therefore has to be read as {@link #DEFAULT_DELAY_HUNDREDTHS}, or the GIF would come out playing several times
+     * faster than the one it was made from, and nothing below it may be written back out either.
+     */
     private static final int MIN_DELAY_HUNDREDTHS = 2;
 
     private GifProcessor() {}
@@ -29,7 +35,7 @@ public final class GifProcessor {
         var image = GifDecoder.read(source);
         int duration = 0;
         for (int i = 0; i < image.getFrameCount(); i++) {
-            duration += image.getDelay(i) * 10;
+            duration += sourceDelay(image, i) * 10;
         }
         return new Meta(image.getWidth(), image.getHeight(), image.getFrameCount(), duration, source.length);
     }
@@ -79,7 +85,7 @@ public final class GifProcessor {
             // the animation would run faster the more frames you skipped.
             int delay = 0;
             for (int j = i; j <= Math.min(i + options.frameStep() - 1, end); j++) {
-                delay += image.getDelay(j);
+                delay += sourceDelay(image, j);
             }
             selected.add(new Selected(i, delay));
         }
@@ -97,6 +103,11 @@ public final class GifProcessor {
             }
         }
         return selected;
+    }
+
+    private static int sourceDelay(GifDecoder.GifImage image, int index) {
+        int delay = image.getDelay(index);
+        return delay < MIN_DELAY_HUNDREDTHS ? DEFAULT_DELAY_HUNDREDTHS : delay;
     }
 
     private static int delayFor(int sourceDelayHundredths, GifOptions options) {
