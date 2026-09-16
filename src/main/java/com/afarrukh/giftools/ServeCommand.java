@@ -6,6 +6,7 @@ import com.github.rvesse.airline.annotations.Option;
 import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,13 @@ public class ServeCommand implements Runnable {
     @Option(name = "--no-open", description = "Do not open the editor in a browser on startup")
     private boolean noOpen;
 
+    @Option(name = "--log-file", description = "Append the log to this file instead of writing it to the console")
+    private String logFile = envOr("LOG_FILE", null);
+
     public void run() {
+        if (logFile != null) {
+            FileLogging.sendLogsTo(Path.of(logFile));
+        }
         var app = GifServer.start(host, port);
         var url = "http://localhost:" + app.port();
         LOG.info("GIF editor running at {}", url);
