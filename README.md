@@ -15,7 +15,7 @@ mvn package
 ./run.ps1     # PowerShell
 ```
 
-Either script builds the jar if it is missing, then starts the editor on http://localhost:8080 and opens it in
+Either script builds the jar if it is missing, then starts the editor on http://localhost:8091 and opens it in
 your browser. Pass a port as the first argument to listen somewhere else, or set `PORT`; anything else you pass
 the script goes on to `serve`:
 
@@ -25,6 +25,9 @@ the script goes on to `serve`:
 PORT=9000 ./run.sh
 ./run.sh 9000 --no-open
 ```
+
+If an editor is already listening on that port - the one started at login, or a window you forgot about - the
+script opens that one in your browser instead of starting a second copy and failing to bind.
 
 ### Without the scripts
 
@@ -37,13 +40,33 @@ This starts the editor on http://localhost:7000 and opens it in your browser.
 Options:
 
 ```
-java -jar target/giftools.jar serve --port 8080     # use a different port
+java -jar target/giftools.jar serve --port 8091     # use a different port
 java -jar target/giftools.jar serve --host 0.0.0.0  # let other machines reach it
 java -jar target/giftools.jar serve --no-open       # don't open a browser
 ```
 
 The editor binds to 127.0.0.1 by default, so only this machine can reach it. `PORT` and `HOST` are read as the
 defaults for those two flags, and an explicit flag wins over the environment.
+
+## Start it at login (Windows)
+
+```powershell
+./install-startup.ps1            # port 8091
+./install-startup.ps1 -Port 9000
+./install-startup.ps1 -Start     # and start it now too, without waiting for the next login
+./install-startup.ps1 -Uninstall
+```
+
+This puts a shortcut in your Startup folder that runs the jar with `javaw`, so the editor is up on
+http://localhost:8091 from login with no console window and no browser tab opening itself. Since there is no
+console to print to, the log goes to `server.log` beside the jar; `--log-file` (or `LOG_FILE`) does that for any
+`serve` run, and rolls the file over at 1MB, keeping two older ones:
+
+```
+java -jar target/giftools.jar serve --log-file server.log
+```
+
+`-Uninstall` only stops it starting at the next login; an editor already running stays up until you close it.
 
 ## Docker
 
