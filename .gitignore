@@ -2,3 +2,4 @@
 target
 contrib
 *.iml
+server.log*
