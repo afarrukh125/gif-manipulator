@@ -34,11 +34,26 @@ let originalUrl = null;
 let pending = null;
 let renderTimer = null;
 
-const IDLE_HINT = $("url-status").textContent;
+let IDLE_HINT = $("url-status").textContent;
+
+/** Which video formats this machine can read depends on whether the server found an ffmpeg, so it is asked. */
+async function describeReach() {
+    try {
+        const response = await fetch("/api/capabilities");
+        if (!response.ok) return;
+        const { ffmpeg } = await response.json();
+        IDLE_HINT = ffmpeg
+            ? "Straight from the web. A GIF, MP4 or WebM link is converted behind the scenes."
+            : "Straight from the web. MP4 links are converted too; WebM needs ffmpeg on the server's PATH.";
+        if (!$("url-input").disabled) $("url-status").textContent = IDLE_HINT;
+    } catch (e) {
+        // Leaving the wording as it is beats replacing it with an error nobody can act on.
+    }
+}
 
 /* Opening a source */
 
-const MEDIA_NAME = /\.(gif|mp4|m4v|mov)$/i;
+const MEDIA_NAME = /\.(gif|mp4|m4v|mov|webm|mkv|avi)$/i;
 const LINK = /^https?:\/\//i;
 
 function isMedia(file) {
@@ -66,7 +81,7 @@ function loadUrl(url) {
 }
 
 function busyTextFor(name, type) {
-    return type.startsWith("video/") || /\.(mp4|m4v|mov)(\?|#|$)/i.test(name)
+    return type.startsWith("video/") || /\.(mp4|m4v|mov|webm|mkv|avi)(\?|#|$)/i.test(name)
         ? "Turning that video into a GIF, this can take a few seconds…"
         : "Opening…";
 }
@@ -477,6 +492,7 @@ function wire() {
     wireCrop();
     wireDropTarget();
     wirePaste();
+    describeReach();
     window.addEventListener("resize", drawCropBox);
 }
 
@@ -512,7 +528,7 @@ function wireDropTarget() {
         if (LINK.test(link)) {
             loadUrl(link);
         } else if (event.dataTransfer?.files.length) {
-            showError("That was not a GIF or an MP4.");
+            showError("That was not a GIF or a video.");
         }
     });
 }

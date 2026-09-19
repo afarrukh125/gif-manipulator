@@ -9,6 +9,11 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /src/target/giftools.jar ./giftools.jar
 
+# Without ffmpeg the only video the editor can open is MP4 carrying H.264, since nothing in Java decodes VP8 or VP9.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN useradd --system --uid 1001 --create-home giftools
 USER giftools
 

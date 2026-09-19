@@ -45,6 +45,7 @@ public final class GifServer {
             config.jetty.multipartConfig.maxTotalRequestSize(MAX_UPLOAD_MB, SizeUnit.MB);
         });
 
+        app.get("/api/capabilities", this::capabilities);
         app.post("/api/gifs", this::upload);
         app.post("/api/gifs/url", this::fromUrl);
         app.get("/api/gifs/{id}", this::original);
@@ -70,6 +71,11 @@ public final class GifServer {
             ctx.status(500).json(Map.of("error", "Something went wrong rendering that GIF"));
         });
         return app;
+    }
+
+    /** What this machine can open, which depends on whether it has an ffmpeg for the formats Java cannot decode. */
+    private void capabilities(Context ctx) {
+        ctx.json(Map.of("ffmpeg", VideoToGif.hasFullCodecSupport()));
     }
 
     private void upload(Context ctx) throws IOException {
@@ -120,7 +126,7 @@ public final class GifServer {
         if (looksLikeStillImage(data)) {
             return "That is a still image, not a GIF or a video";
         }
-        return "That is not a GIF or an MP4 video";
+        return "That is not a GIF or a video";
     }
 
     private static String withGifSuffix(String name) {

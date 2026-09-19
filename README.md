@@ -1,6 +1,6 @@
 # gif-manipulator
 
-A GIF editor you run on your own machine. Drop a GIF into the browser, change it, download it. A link or an MP4
+A GIF editor you run on your own machine. Drop a GIF into the browser, change it, download it. A link or a video
 works too, and is turned into a GIF for you.
 
 ## Opening something
@@ -8,12 +8,23 @@ works too, and is turned into a GIF for you.
 Drop a file on the page, click to choose one, or paste a link into the box on the landing screen. A link can also
 be pasted anywhere on the page with Ctrl+V, or dragged straight from another tab onto the window.
 
-GIFs are opened as they are. An MP4 - a file or a link that turns out to be one, such as the `.mp4` an image host
-redirects you to - is converted to a GIF before the editor sees it, so everything past that point behaves the
-same. Conversion happens in process rather than through ffmpeg, so there is nothing to install, but that limits
-it to MP4 carrying H.264; WebM and the rest are refused with a message saying so. A clip is sampled at 15 frames
-a second, scaled to fit 480 pixels and cut off after 300 frames, which is about twenty seconds - a GIF of a
-longer or larger clip would be enormous and no fun to edit.
+GIFs are opened as they are. A video - a file, or a link that turns out to be one, such as the `.mp4` or `.webm`
+an image host redirects you to - is converted to a GIF before the editor sees it, so everything past that point
+behaves the same. A clip is sampled at 15 frames a second, scaled to fit 480 pixels and cut off after 300 frames,
+which is about twenty seconds; a GIF of a longer or larger clip would be enormous and no fun to edit.
+
+Which videos work depends on the machine:
+
+- **MP4 carrying H.264** always works. It is decoded in process, with nothing to install.
+- **WebM, and everything else**, needs an `ffmpeg` on your `PATH`. WebM carries VP8 or VP9, which no pure Java
+  decoder reads, so there is no way around it. Set `FFMPEG` to a full path to use a particular one - worth doing
+  if the first `ffmpeg` on your `PATH` came bundled with something else and is ancient, since VP9 only arrived in
+  FFmpeg 2.1 and AV1 much later.
+
+The editor logs which of the two it has on startup, and the landing screen says so as well. When ffmpeg is there
+it is used for MP4 too, since it is faster and keeps better time; an MP4 it fails on still falls back to the
+built-in decoder. Converting through ffmpeg writes the clip and its frames to a temporary directory, which is
+deleted as soon as the GIF is built.
 
 Links are fetched by the server, not the browser, so a host that blocks cross origin requests is no obstacle.
 While the editor is bound to 127.0.0.1 a link may point anywhere, including back at your own machine. Bound to
@@ -93,6 +104,8 @@ docker build -t giftools .
 docker run --rm -p 8080:8080 giftools
 ```
 
+The image carries an ffmpeg, so every video format works there without doing anything.
+
 The image binds 0.0.0.0 inside the container and reads `PORT`, so hosts that hand you a port work as they are:
 
 ```
@@ -102,8 +115,8 @@ docker run --rm -e PORT=9000 -p 9000:9000 giftools
 ## Putting it on the internet
 
 Editing happens on the server: the browser uploads the GIF, and the server decodes and re-encodes it. Uploads are
-held in memory for two hours and never written to disk, but on a public host they are sitting in that host's
-memory, not yours.
+held in memory for two hours, and only ever touch the disk while ffmpeg is converting a video, but on a public
+host they are sitting in that host's memory, not yours.
 
 There is no login, and an upload is tied only to an unguessable id, so anyone who can reach the port can upload
 and render. If you expose it beyond your own machine, put something in front of it that terminates TLS and asks

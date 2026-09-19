@@ -1,5 +1,6 @@
 package com.afarrukh.giftools;
 
+import com.afarrukh.giftools.video.VideoToGif;
 import com.afarrukh.giftools.web.GifServer;
 import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
@@ -40,6 +41,11 @@ public class ServeCommand implements Runnable {
         var app = GifServer.start(host, port);
         var url = "http://localhost:" + app.port();
         LOG.info("GIF editor running at {}", url);
+        if (VideoToGif.hasFullCodecSupport()) {
+            LOG.info("ffmpeg found, so WebM and the other video formats can be opened too");
+        } else {
+            LOG.info("No ffmpeg on the PATH, so MP4 is the only video that can be opened; install one for WebM");
+        }
         if (!DEFAULT_HOST.equals(host)) {
             LOG.warn(
                     "Bound to {}, so anything that can reach this machine can upload to the editor;"
