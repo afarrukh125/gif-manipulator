@@ -285,6 +285,16 @@ function showError(message) {
     box.textContent = message || "";
 }
 
+/**
+ * A fresh random name for every download. Naming the file after the source would carry wherever the GIF came from
+ * into whatever it is sent on to, and a fixed name would collide with the last download of the same GIF.
+ */
+function downloadName() {
+    const bytes = crypto.getRandomValues(new Uint8Array(6));
+    const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8)}.gif`;
+}
+
 function formatDuration(ms) {
     return ms >= 1000 ? `${(ms / 1000).toFixed(2)} s` : `${ms} ms`;
 }
@@ -485,7 +495,7 @@ function wire() {
         if (!renderedUrl) return;
         const link = document.createElement("a");
         link.href = renderedUrl;
-        link.download = source.name.replace(/\.gif$/i, "") + "-edited.gif";
+        link.download = downloadName();
         link.click();
     });
 
