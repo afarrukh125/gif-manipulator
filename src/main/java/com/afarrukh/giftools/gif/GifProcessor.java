@@ -40,6 +40,16 @@ public final class GifProcessor {
         return new Meta(image.getWidth(), image.getHeight(), image.getFrameCount(), duration, source.length);
     }
 
+    /** Scales an image down until neither side is longer than {@code maxDimension}, leaving smaller ones alone. */
+    public static BufferedImage fitWithin(BufferedImage source, int maxDimension) {
+        int longest = Math.max(source.getWidth(), source.getHeight());
+        if (longest <= maxDimension) {
+            return source;
+        }
+        double factor = maxDimension / (double) longest;
+        return resize(source, Math.max(1, (int) Math.round(source.getWidth() * factor)), 0);
+    }
+
     public static Result process(byte[] source, GifOptions options) throws IOException {
         var image = GifDecoder.read(source);
         int total = image.getFrameCount();

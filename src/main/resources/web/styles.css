@@ -96,6 +96,55 @@ h1 {
 .dropzone h2 { margin: 0 0 6px; font-size: 19px; font-weight: 600; }
 .dropzone p { margin: 0; color: var(--muted); }
 
+.or {
+    max-width: 620px;
+    margin: 22px auto 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.or::before, .or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+#url-form {
+    display: flex;
+    gap: 8px;
+    max-width: 620px;
+    margin: 0 auto;
+}
+
+#url-input {
+    flex: 1;
+    min-width: 0;
+    padding: 9px 12px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+}
+
+#url-input:focus { outline: none; border-color: var(--accent-dim); }
+#url-input::placeholder { color: var(--muted); }
+
+#url-form:has(:disabled) { opacity: 0.6; }
+
+.centred { max-width: 620px; margin: 10px auto 0; text-align: center; }
+.centred-button { display: block; margin: 18px auto 0; }
+
+.hint.working { color: var(--accent); }
+.hint.failed { color: var(--danger); }
+
 #drop-overlay {
     position: fixed;
     inset: 0;

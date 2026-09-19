@@ -2,6 +2,7 @@ package com.afarrukh.giftools.web;
 
 import com.afarrukh.giftools.gif.GifOptions;
 import com.afarrukh.giftools.gif.GifProcessor;
+import com.afarrukh.giftools.video.VideoToGif;
 import com.fasterxml.jackson.core.JacksonException;
 import io.javalin.Javalin;
 import io.javalin.config.SizeUnit;
@@ -10,6 +11,9 @@ import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.http.staticfiles.Location;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +26,14 @@ public final class GifServer {
     private static final long MAX_UPLOAD_MB = 64;
 
     private final GifStore store = new GifStore();
+    private final RemoteMedia remote;
 
-    private GifServer() {}
+    private GifServer(String host) {
+        remote = new RemoteMedia(MAX_UPLOAD_MB * SizeUnit.MB.getMultiplier(), isLoopback(host));
+    }
 
     public static Javalin start(String host, int port) {
-        return new GifServer().create().start(host, port);
+        return new GifServer(host).create().start(host, port);
     }
 
     private Javalin create() {
@@ -39,6 +46,7 @@ public final class GifServer {
         });
 
         app.post("/api/gifs", this::upload);
+        app.post("/api/gifs/url", this::fromUrl);
         app.get("/api/gifs/{id}", this::original);
         app.post("/api/gifs/{id}/render", this::render);
 
@@ -52,6 +60,10 @@ public final class GifServer {
         app.exception(IOException.class, (e, ctx) -> {
             LOG.warn("Could not read that GIF", e);
             ctx.status(400).json(Map.of("error", "That file could not be read as a GIF: " + e.getMessage()));
+        });
+        app.exception(InterruptedException.class, (e, ctx) -> {
+            Thread.currentThread().interrupt();
+            ctx.status(503).json(Map.of("error", "That download was interrupted"));
         });
         app.exception(Exception.class, (e, ctx) -> {
             LOG.error("Request failed", e);
@@ -69,12 +81,58 @@ public final class GifServer {
         try (var content = uploaded.content()) {
             data = content.readAllBytes();
         }
-        if (!looksLikeGif(data)) {
-            throw new BadRequestResponse("That file is not a GIF");
-        }
-        var entry = store.put(uploaded.filename(), data, GifProcessor.inspect(data));
-        ctx.json(describe(entry));
+        ctx.json(ingest(uploaded.filename(), data, null));
     }
+
+    /** Opens whatever a pasted link points at, so a GIF or clip on the web can be edited without downloading it. */
+    private void fromUrl(Context ctx) throws IOException, InterruptedException {
+        var url = ctx.bodyAsClass(UrlRequest.class).url();
+        if (url == null || url.isBlank()) {
+            throw new BadRequestResponse("Send the address as a JSON body of the form {\"url\": \"...\"}");
+        }
+        LOG.info("Fetching {}", url);
+        var download = remote.fetch(url);
+        ctx.json(ingest(download.name(), download.data(), download.contentType()));
+    }
+
+    /**
+     * Stores one source for editing. A clip is turned into a GIF on the way in, so that nothing past this point has to
+     * know the difference.
+     */
+    private Map<String, Object> ingest(String name, byte[] data, String contentType) throws IOException {
+        boolean converted = false;
+        if (!looksLikeGif(data)) {
+            if (!VideoToGif.isVideo(data)) {
+                throw new IllegalArgumentException(describeUnusable(data, contentType));
+            }
+            data = VideoToGif.convert(data);
+            name = withGifSuffix(name);
+            converted = true;
+        }
+        return describe(store.put(name, data, GifProcessor.inspect(data)), converted);
+    }
+
+    private static String describeUnusable(byte[] data, String contentType) {
+        if (contentType != null && contentType.startsWith("text/html")) {
+            return "That link gave back a web page rather than a file."
+                    + " Open the GIF or video itself and copy the address of the image";
+        }
+        if (looksLikeStillImage(data)) {
+            return "That is a still image, not a GIF or a video";
+        }
+        return "That is not a GIF or an MP4 video";
+    }
+
+    private static String withGifSuffix(String name) {
+        if (name == null || name.isBlank()) {
+            return "clip.gif";
+        }
+        int dot = name.lastIndexOf('.');
+        return (dot > 0 ? name.substring(0, dot) : name) + ".gif";
+    }
+
+    /** The JSON body {@code /api/gifs/url} takes. */
+    record UrlRequest(String url) {}
 
     private void original(Context ctx) {
         var entry = require(ctx);
@@ -102,19 +160,38 @@ public final class GifServer {
         return entry;
     }
 
-    private static Map<String, Object> describe(GifStore.Entry entry) {
+    private static Map<String, Object> describe(GifStore.Entry entry, boolean converted) {
         var meta = entry.meta();
-        return Map.of(
-                "id", entry.id(),
-                "name", entry.name(),
-                "width", meta.width(),
-                "height", meta.height(),
-                "frameCount", meta.frameCount(),
-                "durationMs", meta.durationMs(),
-                "sizeBytes", meta.sizeBytes());
+        var described = new HashMap<String, Object>();
+        described.put("id", entry.id());
+        described.put("name", entry.name());
+        described.put("width", meta.width());
+        described.put("height", meta.height());
+        described.put("frameCount", meta.frameCount());
+        described.put("durationMs", meta.durationMs());
+        described.put("sizeBytes", meta.sizeBytes());
+        described.put("converted", converted);
+        return described;
+    }
+
+    private static boolean isLoopback(String host) {
+        try {
+            return InetAddress.getByName(host).isLoopbackAddress();
+        } catch (UnknownHostException e) {
+            return false;
+        }
     }
 
     private static boolean looksLikeGif(byte[] data) {
         return data.length > 6 && data[0] == 'G' && data[1] == 'I' && data[2] == 'F';
+    }
+
+    private static boolean looksLikeStillImage(byte[] data) {
+        if (data.length < 4) {
+            return false;
+        }
+        boolean png = (data[0] & 0xFF) == 0x89 && data[1] == 'P' && data[2] == 'N' && data[3] == 'G';
+        boolean jpeg = (data[0] & 0xFF) == 0xFF && (data[1] & 0xFF) == 0xD8;
+        return png || jpeg;
     }
 }

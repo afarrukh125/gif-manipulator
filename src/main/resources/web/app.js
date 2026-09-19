@@ -34,27 +34,66 @@ let originalUrl = null;
 let pending = null;
 let renderTimer = null;
 
-/* Upload */
+const IDLE_HINT = $("url-status").textContent;
 
-async function load(file) {
+/* Opening a source */
+
+const MEDIA_NAME = /\.(gif|mp4|m4v|mov)$/i;
+const LINK = /^https?:\/\//i;
+
+function isMedia(file) {
+    return MEDIA_NAME.test(file.name) || file.type === "image/gif" || file.type.startsWith("video/");
+}
+
+function load(file) {
     if (!file) return;
-    showError(null);
     const body = new FormData();
     body.append("file", file);
+    return openSource(() => fetch("/api/gifs", { method: "POST", body }), busyTextFor(file.name, file.type));
+}
 
-    let response;
+function loadUrl(url) {
+    const address = (url || "").trim();
+    if (!address) return;
+    return openSource(
+        () => fetch("/api/gifs/url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: address }),
+        }),
+        busyTextFor(address, ""),
+    );
+}
+
+function busyTextFor(name, type) {
+    return type.startsWith("video/") || /\.(mp4|m4v|mov)(\?|#|$)/i.test(name)
+        ? "Turning that video into a GIF, this can take a few seconds…"
+        : "Opening…";
+}
+
+async function openSource(send, busyText) {
+    showError(null);
+    setBusy(busyText);
     try {
-        response = await fetch("/api/gifs", { method: "POST", body });
-    } catch (e) {
-        showError("Could not reach the server. Is it still running?");
-        return;
+        let response;
+        try {
+            response = await send();
+        } catch (e) {
+            showError("Could not reach the server. Is it still running?");
+            return;
+        }
+        if (!response.ok) {
+            showError(await errorText(response));
+            return;
+        }
+        adopt(await response.json());
+    } finally {
+        setBusy(null);
     }
-    if (!response.ok) {
-        showError(await errorText(response));
-        return;
-    }
+}
 
-    source = await response.json();
+function adopt(opened) {
+    source = opened;
     options = { ...DEFAULTS };
     revoke();
     originalUrl = `/api/gifs/${source.id}`;
@@ -63,12 +102,29 @@ async function load(file) {
     $("landing").hidden = true;
     $("editor").hidden = false;
     $("change-file").hidden = false;
-    $("source-name").textContent = source.name;
+    $("url-input").value = "";
+    $("source-name").textContent = source.converted ? `${source.name} · from a video` : source.name;
     $("crop-image").src = originalUrl;
 
     applyBounds();
     writeControls();
     render();
+}
+
+function setBusy(message) {
+    const status = $("url-status");
+    status.textContent = message || IDLE_HINT;
+    status.classList.toggle("working", Boolean(message));
+    $("url-input").disabled = Boolean(message);
+    $("url-go").disabled = Boolean(message);
+}
+
+/** Shows the picker again without throwing away what is already open, so a mis-click can be backed out of. */
+function showLanding() {
+    $("landing").hidden = false;
+    $("editor").hidden = true;
+    $("cancel-open").hidden = !source;
+    $("url-input").focus();
 }
 
 function applyBounds() {
@@ -347,7 +403,16 @@ function clamp(value, min, max) {
 
 function wire() {
     $("file-input").addEventListener("change", (e) => load(e.target.files[0]));
-    $("change-file").addEventListener("click", () => $("file-input").click());
+    $("change-file").addEventListener("click", showLanding);
+    $("cancel-open").addEventListener("click", () => {
+        $("landing").hidden = true;
+        $("editor").hidden = false;
+    });
+
+    $("url-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        loadUrl($("url-input").value);
+    });
 
     for (const input of bound()) {
         input.addEventListener("input", scheduleRender);
@@ -411,6 +476,7 @@ function wire() {
 
     wireCrop();
     wireDropTarget();
+    wirePaste();
     window.addEventListener("resize", drawCropBox);
 }
 
@@ -436,12 +502,31 @@ function wireDropTarget() {
         event.preventDefault();
         depth = 0;
         overlay.hidden = true;
-        const file = [...(event.dataTransfer?.files || [])].find((f) => /\.gif$/i.test(f.name) || f.type === "image/gif");
+        const file = [...(event.dataTransfer?.files || [])].find(isMedia);
         if (file) {
             load(file);
-        } else if (event.dataTransfer?.files.length) {
-            showError("That was not a GIF.");
+            return;
         }
+        // Dragging an image out of another tab hands over its address rather than its bytes.
+        const link = (event.dataTransfer?.getData("text/uri-list") || event.dataTransfer?.getData("text") || "").trim();
+        if (LINK.test(link)) {
+            loadUrl(link);
+        } else if (event.dataTransfer?.files.length) {
+            showError("That was not a GIF or an MP4.");
+        }
+    });
+}
+
+function wirePaste() {
+    window.addEventListener("paste", (event) => {
+        if (event.target?.tagName === "INPUT" || event.target?.tagName === "TEXTAREA") return;
+        const file = [...(event.clipboardData?.files || [])].find(isMedia);
+        if (file) {
+            load(file);
+            return;
+        }
+        const text = (event.clipboardData?.getData("text") || "").trim();
+        if (LINK.test(text)) loadUrl(text);
     });
 }
 

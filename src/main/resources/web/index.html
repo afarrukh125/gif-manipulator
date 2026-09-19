@@ -9,7 +9,7 @@
 </head>
 <body>
 <div id="drop-overlay" hidden>
-    <div class="drop-card">Drop the GIF anywhere</div>
+    <div class="drop-card">Drop a GIF, an MP4 or a link anywhere</div>
 </div>
 
 <header>
@@ -27,11 +27,21 @@
         <label class="dropzone" for="file-input">
             <div class="dropzone-inner">
                 <div class="dropzone-icon">↓</div>
-                <h2>Drop a GIF here</h2>
-                <p>or click to choose one. Nothing leaves this machine.</p>
+                <h2>Drop a GIF or an MP4 here</h2>
+                <p>or click to choose one. A video is turned into a GIF for you.</p>
             </div>
         </label>
-        <input id="file-input" type="file" accept="image/gif,.gif" hidden>
+        <input id="file-input" type="file" accept="image/gif,.gif,video/mp4,.mp4,.m4v,.mov" hidden>
+
+        <div class="or">or paste a link</div>
+
+        <form id="url-form" autocomplete="off">
+            <input id="url-input" type="url" inputmode="url" spellcheck="false"
+                   placeholder="https://example.com/something.gif">
+            <button type="submit" class="primary" id="url-go">Open</button>
+        </form>
+        <p id="url-status" class="hint centred">Straight from the web. An MP4 link is converted behind the scenes.</p>
+        <button type="button" class="ghost centred-button" id="cancel-open" hidden>Back to the GIF you were editing</button>
     </section>
 
     <div id="editor" hidden>

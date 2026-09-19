@@ -1,6 +1,24 @@
 # gif-manipulator
 
-A GIF editor you run on your own machine. Drop a GIF into the browser, change it, download it.
+A GIF editor you run on your own machine. Drop a GIF into the browser, change it, download it. A link or an MP4
+works too, and is turned into a GIF for you.
+
+## Opening something
+
+Drop a file on the page, click to choose one, or paste a link into the box on the landing screen. A link can also
+be pasted anywhere on the page with Ctrl+V, or dragged straight from another tab onto the window.
+
+GIFs are opened as they are. An MP4 - a file or a link that turns out to be one, such as the `.mp4` an image host
+redirects you to - is converted to a GIF before the editor sees it, so everything past that point behaves the
+same. Conversion happens in process rather than through ffmpeg, so there is nothing to install, but that limits
+it to MP4 carrying H.264; WebM and the rest are refused with a message saying so. A clip is sampled at 15 frames
+a second, scaled to fit 480 pixels and cut off after 300 frames, which is about twenty seconds - a GIF of a
+longer or larger clip would be enormous and no fun to edit.
+
+Links are fetched by the server, not the browser, so a host that blocks cross origin requests is no obstacle.
+While the editor is bound to 127.0.0.1 a link may point anywhere, including back at your own machine. Bound to
+anything else it refuses links into loopback, link local and private addresses, so that whoever can reach the
+editor cannot use it to read addresses they could not reach themselves.
 
 ## Build
 
@@ -91,6 +109,10 @@ There is no login, and an upload is tied only to an unguessable id, so anyone wh
 and render. If you expose it beyond your own machine, put something in front of it that terminates TLS and asks
 for a password - Cloudflare Tunnel with Access, or a reverse proxy with basic auth. Rendering is CPU heavy and
 uploads are capped at 64MB each with a 512MB store, so also give it a memory limit it cannot exceed.
+
+Opening a link makes the host fetch a URL a visitor chose. Private addresses are refused whenever the editor is
+bound to anything but loopback, but the host's own outbound reach is still being lent out, so treat the fetcher
+as one more reason to keep a password in front of it.
 
 ## Command line
 
